@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alison Learning German</title>
+<style>
+:root{--bg:#f6fbfa;--line:#dde8e6;--text:#23302f;--mute:#667876;
+--der:#2563eb;--die:#dc2626;--das:#16a34a;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);line-height:1.6;
+font-family:"Noto Sans TC","PingFang HK","Microsoft JhengHei",system-ui,sans-serif}
+a{color:inherit}
+.wrap{max-width:1040px;margin:0 auto;padding:0 20px}
+header{background:linear-gradient(90deg,#d6f1ec,#dcebfa 55%,#f3e8d6);border-bottom:1px solid var(--line)}
+header .wrap{padding-top:22px;padding-bottom:20px}
+header a{text-decoration:none;font-weight:800;font-size:1.5rem;letter-spacing:.2px;display:block}
+header span{color:#4b5f5d;font-size:.95rem}
+h1{font-size:1.4rem;margin:30px 0 6px}
+.lead{color:var(--mute);margin:0 0 18px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px}
+.chip{border:1px solid var(--c-line,#cfd9d7);background:var(--c-bg,#fff);border-radius:999px;padding:5px 15px;font:inherit;font-size:.92rem;cursor:pointer;color:var(--c-ink,#23302f)}
+.chip[aria-pressed="true"]{background:var(--c-ink,#23302f);color:#fff;border-color:var(--c-ink,#23302f)}
+.chip:focus-visible,.seek:focus-visible,input:focus-visible,.back:focus-visible,.card:focus-visible{outline:2px solid var(--der);outline-offset:2px}
+.list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;padding-bottom:48px}
+.card{display:block;text-decoration:none;border:1px solid var(--c-line);border-radius:10px;overflow:hidden;background:var(--c-bg)}
+.card:hover{border-color:var(--c-ink)}
+.card img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;background:#e8efee}
+.card div{padding:12px 14px}
+.card b{display:block;font-weight:600;color:var(--text)}
+.tag{display:inline-block;border-radius:999px;padding:1px 10px;font-size:.8rem;background:#fff;color:var(--c-ink);border:1px solid var(--c-line);margin-right:6px}
+.meta{color:var(--mute);font-size:.85rem}
+.back{display:inline-block;margin:24px 0 8px;color:var(--mute);text-decoration:none;font-size:.9rem}
+.watch{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:28px;align-items:start;padding-bottom:48px}
+@media(max-width:820px){.watch{grid-template-columns:1fr}}
+.player{aspect-ratio:16/9;background:#e8efee;border-radius:10px;overflow:hidden;position:sticky;top:12px}
+@media(max-width:820px){.player{position:static}}
+.player iframe{width:100%;height:100%;border:0}
+.panel{background:var(--c-bg);border:1px solid var(--c-line);border-radius:10px;padding:18px 18px 8px}
+h2{font-size:1.3rem;margin:0 0 6px}
+input[type=search]{width:100%;padding:9px 12px;border:1px solid var(--c-line);border-radius:8px;font:inherit;margin:14px 0 6px;background:#fff}
+.row{display:grid;grid-template-columns:60px 1fr;gap:12px;padding:14px 0;border-top:1px solid var(--c-line)}
+.seek{align-self:start;border:1px solid var(--c-line);background:#fff;border-radius:6px;padding:3px 0;font:inherit;font-size:.85rem;font-variant-numeric:tabular-nums;cursor:pointer;color:var(--c-ink)}
+.seek:hover{background:var(--c-ink);color:#fff}
+.de{font-size:1.1rem;font-weight:700}
+.de .art{margin-right:.3em}
+.art.der{color:var(--der)}.art.die{color:var(--die)}.art.das{color:var(--das)}
+.pos{color:var(--mute);font-size:.85rem;margin-left:8px;font-weight:400}
+.zh{margin:2px 0}
+.ex{color:var(--mute);font-size:.92rem;margin:4px 0 0}
+.empty{color:var(--mute);padding:24px 0}
+</style>
+</head>
+<body>
+<header><div class="wrap"><a href="#">Alison Learning German</a><span>跟著影片學德文</span></div></header>
+<main class="wrap" id="app"></main>
+
+<script>
+/* ============ 你只需要改呢度 ============
+   id    = YouTube 影片網址嘅影片代碼（youtu.be/ 後面、? 前面嗰串）
+   topic = 議題，例如 新聞、體育、社會實驗、歷史（可以隨時自己加新議題，會自動出現）
+   art   = der / die / das（只有名詞先需要，其他留空 ""）
+   time  = 該詞出現嘅秒數（83 即 1:23）
+   試行影片入面嘅詞彙同時間只係示範，請按影片內容替換。 */
+const VIDEOS = [
+  {
+    id: "U8xKvBvXC14",
+    title: " Tagesschau 中文 | 德國與另外四個歐盟國家計劃在盧旺達設立遣返中心 | 16.11.2026",
+    topic: "新聞",
+    vocab: [
+      { art:"", de:"über etw. verhandeln", pos:"動詞片語", zh:"談判", ex:"Sie verhandeln über einen neuen Vertrag.", time:5 },
+      { art:"das", de:"Abschiebezentrum, tren", pos:"名詞・中性", zh:"遣返中心", ex:"由 Abschiebung「遣返、驅逐」與 Zentrum「中心」組成", time:7 },
+      { art:"", de:"ab kommendem Jahr", pos:"固定時間搭配", zh:"從明年起", ex:"常見於新聞、商業或正式場合，意為「從即將到來的一年開始」", time:10 },
+      { art:"die", de:"Beratung，en", pos:"名詞・陰性", zh:"磋商、協商、商量", ex:"Nach einer langen Beratung haben wir eine Lösung gefunden.", time:19 }
+    ]
+  }
+];
+
+/* 議題顏色：想指定某議題嘅顏色就喺度改，冇寫嘅新議題會自動配色 */
+const PALETTE = [
+  { bg:"#dcf3ef", line:"#a9dcd3", ink:"#0f6f63" },  /* 湖水綠 */
+  { bg:"#e0edfb", line:"#b3d0f0", ink:"#2a62a8" },  /* 淺藍 */
+  { bg:"#f4ead8", line:"#e0cba6", ink:"#8a6330" },  /* 淺大地 */
+  { bg:"#fbe5e1", line:"#f0bdb5", ink:"#b04a3d" },  /* 淺珊瑚 */
+  { bg:"#ebe5f8", line:"#cbbfec", ink:"#6247aa" },  /* 淺紫 */
+  { bg:"#fbf1cf", line:"#ecd98d", ink:"#8a6d0a" },  /* 淺黃 */
+  { bg:"#e4f3d9", line:"#c0e0a8", ink:"#3d7a1f" }   /* 淺草綠 */
+];
+const TOPIC_COLOR = { "新聞":0, "體育":1, "社會實驗":5, "歷史":2 };
+/* ======================================= */
+
+const app = document.getElementById("app");
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmt = t => Math.floor(t/60) + ":" + String(t%60).padStart(2,"0");
+let player = null, apiReady = false, pendingId = null, topicFilter = "全部";
+
+function color(topic){
+  let i = TOPIC_COLOR[topic];
+  if (i === undefined) { i = 0; for (const ch of String(topic)) i = (i*31 + ch.charCodeAt(0)) >>> 0; i = i % PALETTE.length; }
+  return PALETTE[i];
+}
+const cssVars = c => `--c-bg:${c.bg};--c-line:${c.line};--c-ink:${c.ink}`;
+
+const tag = document.createElement("script");
+tag.src = "https://www.youtube.com/iframe_api";
+document.head.appendChild(tag);
+window.onYouTubeIframeAPIReady = () => { apiReady = true; if (pendingId) mountPlayer(pendingId); };
+
+function mountPlayer(id){
+  pendingId = id;
+  if (!apiReady) return;
+  if (player && player.destroy) { try{ player.destroy(); }catch(e){} }
+  player = new YT.Player("yt", { videoId:id, playerVars:{ rel:0, modestbranding:1 } });
+}
+
+function home(){
+  const topics = [...new Set(VIDEOS.map(v => v.topic))];
+  if (topicFilter !== "全部" && !topics.includes(topicFilter)) topicFilter = "全部";
+  const shown = VIDEOS.filter(v => topicFilter === "全部" || v.topic === topicFilter);
+  app.innerHTML = `
+    <h1>影片詞彙筆記</h1>
+    <p class="lead">每條影片整理咗有用嘅德文用詞同表達，撳時間就可以跳到原句。</p>
+    <div class="chips">
+      <button class="chip" aria-pressed="${topicFilter==="全部"}" data-t="全部">全部</button>
+      ${topics.map(t => `<button class="chip" style="${cssVars(color(t))}" aria-pressed="${t===topicFilter}" data-t="${esc(t)}">${esc(t)}</button>`).join("")}
+    </div>
+    <div class="list">${shown.map(v => `
+      <a class="card" style="${cssVars(color(v.topic))}" href="#${esc(v.id)}">
+        <img alt="" loading="lazy" src="https://i.ytimg.com/vi/${esc(v.id)}/hqdefault.jpg">
+        <div><b>${esc(v.title)}</b><span class="tag">${esc(v.topic)}</span><span class="meta">${v.vocab.length} 個詞彙</span></div>
+      </a>`).join("") || '<p class="empty">呢個議題暫時未有影片。</p>'}</div>`;
+  app.querySelectorAll(".chip").forEach(b => b.onclick = () => { topicFilter = b.dataset.t; home(); });
+}
+
+function vocabHTML(list){
+  if (!list.length) return '<p class="empty">搵唔到相符嘅詞彙，試下其他關鍵字。</p>';
+  return list.map(w => `
+    <div class="row">
+      <button class="seek" data-t="${w.time}" aria-label="跳到 ${fmt(w.time)}">${fmt(w.time)}</button>
+      <div>
+        <div class="de">${w.art ? `<span class="art ${esc(w.art)}">${esc(w.art)}</span>` : ""}${esc(w.de)}<span class="pos">${esc(w.pos)}</span></div>
+        <div class="zh">${esc(w.zh)}</div>
+        ${w.ex ? `<p class="ex">${esc(w.ex)}</p>` : ""}
+      </div>
+    </div>`).join("");
+}
+
+function watch(id){
+  const v = VIDEOS.find(x => x.id === id);
+  if (!v) { location.hash = ""; return; }
+  app.innerHTML = `
+    <a class="back" href="#">← 返回影片列表</a>
+    <div class="watch" style="${cssVars(color(v.topic))}">
+      <div class="player"><div id="yt"></div></div>
+      <section class="panel">
+        <h2>${esc(v.title)}</h2>
+        <span class="tag">${esc(v.topic)}</span><span class="meta">${v.vocab.length} 個詞彙</span>
+        <input type="search" id="q" placeholder="搜尋德文或中文" aria-label="搜尋詞彙">
+        <div id="vocab">${vocabHTML(v.vocab)}</div>
+      </section>
+    </div>`;
+  mountPlayer(id);
+  const box = document.getElementById("vocab");
+  box.onclick = e => {
+    const b = e.target.closest(".seek");
+    if (b && player && player.seekTo) { player.seekTo(+b.dataset.t, true); player.playVideo(); }
+  };
+  document.getElementById("q").oninput = e => {
+    const k = e.target.value.trim().toLowerCase();
+    box.innerHTML = vocabHTML(v.vocab.filter(w => (w.de + w.zh + (w.ex||"")).toLowerCase().includes(k)));
+  };
+  window.scrollTo(0,0);
+}
+
+function route(){
+  const id = decodeURIComponent(location.hash.slice(1));
+  if (id) watch(id); else home();
+}
+window.addEventListener("hashchange", route);
+route();
+</script>
+</body>
+</html>
