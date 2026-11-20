@@ -32,10 +32,11 @@ h1{font-size:1.4rem;margin:30px 0 6px}
 .meta{color:var(--mute);font-size:.85rem}
 .back{display:inline-block;margin:24px 0 8px;color:var(--mute);text-decoration:none;font-size:.9rem}
 .watch{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:28px;align-items:start;padding-bottom:48px}
-@media(max-width:820px){.watch{grid-template-columns:1fr}}
-.player{aspect-ratio:16/9;background:#e8efee;border-radius:10px;overflow:hidden;position:sticky;top:12px}
-@media(max-width:820px){.player{position:static}}
-.player iframe{width:100%;height:100%;border:0}
+@media(max-width:820px){.watch{display:block}}
+.player{aspect-ratio:16/9;background:#e8efee;border-radius:10px;overflow:hidden;position:sticky;top:12px;z-index:5}
+@media(max-width:820px){.player{top:0;margin:0 -20px 14px;border-radius:0 0 10px 10px;box-shadow:0 4px 12px rgba(0,0,0,.15)}}
+.player iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.chips.pos{margin:6px 0 4px}
 .panel{background:var(--c-bg);border:1px solid var(--c-line);border-radius:10px;padding:18px 18px 8px}
 h2{font-size:1.3rem;margin:0 0 6px}
 input[type=search]{width:100%;padding:9px 12px;border:1px solid var(--c-line);border-radius:8px;font:inherit;margin:14px 0 6px;background:#fff}
@@ -55,26 +56,30 @@ input[type=search]{width:100%;padding:9px 12px;border:1px solid var(--c-line);bo
 <header><div class="wrap"><a href="#">Alison Learning German</a><span>跟著影片學德文</span></div></header>
 <main class="wrap" id="app"></main>
 
+<script src="videos.js"></script>
 <script>
-/* ============ 你只需要改呢度 ============
-   id    = YouTube 影片網址嘅影片代碼（youtu.be/ 後面、? 前面嗰串）
-   topic = 議題，例如 新聞、體育、社會實驗、歷史（可以隨時自己加新議題，會自動出現）
-   art   = der / die / das（只有名詞先需要，其他留空 ""）
-   time  = 該詞出現嘅秒數（83 即 1:23）
-   試行影片入面嘅詞彙同時間只係示範，請按影片內容替換。 */
-const VIDEOS = [
-  {
-    id: "U8xKvBvXC14",
-    title: " Tagesschau 中文 | 德國與另外四個歐盟國家計劃在盧旺達設立遣返中心 | 16.11.2026",
-    topic: "新聞",
-    vocab: [
-      { art:"", de:"über etw. verhandeln", pos:"動詞片語", zh:"談判", ex:"Sie verhandeln über einen neuen Vertrag.", time:5 },
-      { art:"das", de:"Abschiebezentrum, tren", pos:"名詞・中性", zh:"遣返中心", ex:"由 Abschiebung「遣返、驅逐」與 Zentrum「中心」組成", time:7 },
-      { art:"", de:"ab kommendem Jahr", pos:"固定時間搭配", zh:"從明年起", ex:"常見於新聞、商業或正式場合，意為「從即將到來的一年開始」", time:10 },
-      { art:"die", de:"Beratung，en", pos:"名詞・陰性", zh:"磋商、協商、商量", ex:"Nach einer langen Beratung haben wir eine Lösung gefunden.", time:19 }
-    ]
-  }
-];
+/* 呢個檔案日常唔需要改。新增影片同詞語，請去改 videos.js */
+window.addEventListener("error", e => {
+  const b = document.createElement("div");
+  b.style.cssText = "background:#fff4d6;border-bottom:2px solid #e0b43a;padding:12px 20px;font-size:.95rem;color:#5c4400";
+  const f = (e.filename || "").split("/").pop() || "網站";
+  b.textContent = "⚠️ 出錯位置：" + f + (e.lineno ? " 第 " + e.lineno + " 行" : "") + "。通常係少咗引號、逗號，或者貼上時有多餘符號。錯誤：" + e.message;
+  document.body.prepend(b);
+});
+
+function toSec(t){
+  t = String(t || "").replace(/：/g, ":").trim();
+  if (t.includes(":")) return t.split(":").reduce((a, x) => a * 60 + (parseFloat(x) || 0), 0);
+  return parseFloat(t) || 0;
+}
+function parseWords(txt){
+  return String(txt || "").split("\n").map(l => l.trim()).filter(l => l && !l.startsWith("#")).map(l => {
+    const f = l.replace(/｜/g, "|").split("|").map(x => x.trim());
+    const art = (f[2] || "").toLowerCase();
+    return { time: toSec(f[0]), pos: f[1] || "", art: ["der","die","das"].includes(art) ? art : "", de: f[3] || "", zh: f[4] || "", ex: f.slice(5).join(" | ") };
+  });
+}
+const DATA = (typeof VIDEOS !== "undefined" ? VIDEOS : []).map(v => ({ ...v, title: (v.title || "").trim(), vocab: v.vocab || parseWords(v.words) }));
 
 /* 議題顏色：想指定某議題嘅顏色就喺度改，冇寫嘅新議題會自動配色 */
 const PALETTE = [
@@ -91,6 +96,8 @@ const TOPIC_COLOR = { "新聞":0, "體育":1, "社會實驗":5, "歷史":2 };
 
 const app = document.getElementById("app");
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const POS_TABS = ["全部","名詞","動詞","形容詞","其他"];
+const posOf = w => { const p = w.pos || ""; return p.startsWith("名詞") ? "名詞" : p.startsWith("動詞") ? "動詞" : p.startsWith("形容詞") ? "形容詞" : "其他"; };
 const fmt = t => Math.floor(t/60) + ":" + String(t%60).padStart(2,"0");
 let player = null, apiReady = false, pendingId = null, topicFilter = "全部";
 
@@ -114,9 +121,9 @@ function mountPlayer(id){
 }
 
 function home(){
-  const topics = [...new Set(VIDEOS.map(v => v.topic))];
+  const topics = [...new Set(DATA.map(v => v.topic))];
   if (topicFilter !== "全部" && !topics.includes(topicFilter)) topicFilter = "全部";
-  const shown = VIDEOS.filter(v => topicFilter === "全部" || v.topic === topicFilter);
+  const shown = DATA.filter(v => topicFilter === "全部" || v.topic === topicFilter);
   app.innerHTML = `
     <h1>影片詞彙筆記</h1>
     <p class="lead">每條影片整理咗有用嘅德文用詞同表達，撳時間就可以跳到原句。</p>
@@ -146,7 +153,7 @@ function vocabHTML(list){
 }
 
 function watch(id){
-  const v = VIDEOS.find(x => x.id === id);
+  const v = DATA.find(x => x.id === id);
   if (!v) { location.hash = ""; return; }
   app.innerHTML = `
     <a class="back" href="#">← 返回影片列表</a>
@@ -156,6 +163,7 @@ function watch(id){
         <h2>${esc(v.title)}</h2>
         <span class="tag">${esc(v.topic)}</span><span class="meta">${v.vocab.length} 個詞彙</span>
         <input type="search" id="q" placeholder="搜尋德文或中文" aria-label="搜尋詞彙">
+        <div class="chips pos">${POS_TABS.map(t => `<button class="chip" data-p="${t}" aria-pressed="${t==="全部"}">${t} ${t==="全部" ? v.vocab.length : v.vocab.filter(w => posOf(w)===t).length}</button>`).join("")}</div>
         <div id="vocab">${vocabHTML(v.vocab)}</div>
       </section>
     </div>`;
@@ -165,10 +173,14 @@ function watch(id){
     const b = e.target.closest(".seek");
     if (b && player && player.seekTo) { player.seekTo(+b.dataset.t, true); player.playVideo(); }
   };
-  document.getElementById("q").oninput = e => {
-    const k = e.target.value.trim().toLowerCase();
-    box.innerHTML = vocabHTML(v.vocab.filter(w => (w.de + w.zh + (w.ex||"")).toLowerCase().includes(k)));
+  let pf = "全部", kw = "";
+  const chips = app.querySelectorAll(".chips.pos .chip");
+  const refresh = () => {
+    chips.forEach(c => c.setAttribute("aria-pressed", c.dataset.p === pf));
+    box.innerHTML = vocabHTML(v.vocab.filter(w => (pf === "全部" || posOf(w) === pf) && (w.de + w.zh + (w.ex||"")).toLowerCase().includes(kw)));
   };
+  chips.forEach(c => c.onclick = () => { pf = c.dataset.p; refresh(); });
+  document.getElementById("q").oninput = e => { kw = e.target.value.trim().toLowerCase(); refresh(); };
   window.scrollTo(0,0);
 }
 
